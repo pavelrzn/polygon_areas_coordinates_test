@@ -1,6 +1,6 @@
 import UdfLib.defineArea
 import org.apache.spark.sql.SparkSession
-import org.apache.spark.sql.functions.{col, count, from_unixtime}
+import org.apache.spark.sql.functions.{col, count, from_unixtime, lit}
 import org.apache.spark.storage.StorageLevel
 
 import java.awt.Polygon
@@ -24,7 +24,12 @@ object TestPolygon extends App {
     .persist(StorageLevel.MEMORY_ONLY)
 
   comments.show(5)
-  comments.write.csv("./areas")
+//  comments.write.csv("./areas")
+
+  comments.where(col("area") === "Северо-Запад")
+    .select("latitude", "longitude")
+    .withColumn("weight", lit("1"))
+    .write.csv("./South")
 
   comments.groupBy(col("area")).agg(count("area")).show(false)
 
