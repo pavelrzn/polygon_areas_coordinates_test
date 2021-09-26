@@ -1,0 +1,76 @@
+# Create external Hive table:
+
+CREATE EXTERNAL TABLE air_complaints_rzn
+(appeal_id STRING,comment STRING,user_id STRING,latitude STRING ,longitude STRING ,time STRING, area STRING)
+ROW FORMAT SERDE 'org.apache.hadoop.hive.serde2.OpenCSVSerde'
+WITH SERDEPROPERTIES (
+       "separatorChar" = ",",
+       "quoteChar"     = "\""
+)
+STORED AS TEXTFILE
+LOCATION '/user/root/air_complaints'
+TBLPROPERTIES ("skip.header.line.count"="1")
+;
+	  
+
+
+# рейтинг самых "вонючих" дней
+SELECT date(time), count(*) as count 
+FROM air_complaints_rzn
+group by date(time)
+order by count desc
+;
+
+# рейтинг самых популярных часов у заводов для выбросов 
+SELECT hour(time), count(*) as count
+FROM air_complaints_rzn
+group by hour(time)
+order by count
+;
+
+
+# в какой части города пользователь с id = 4 скорее всего работает  ( это я =)  )
+SELECT time, area
+from air_complaints_rzn
+where user_id = 4 AND hour(time) in (11,12,13,14,15,16,17)
+;
+
+# какие запахи ощущает чаще всего конкретный пользователь
+SELECT comment, count(*) as count 
+FROM air_complaints_rzn
+where user_id = 574
+group by comment
+order by count
+;
+
+
+# как часто поступают жалобы на конкретное вещество (в примере все описания соответсвуют сероводороду)
+SELECT count(*) FROM air_complaints_rzn
+where 
+UPPER(comment) like UPPER('%сероводород%') OR
+UPPER(comment) like UPPER('%канализ%') OR
+UPPER(comment) like UPPER('%фекал%') OR
+UPPER(comment) like UPPER('%фикал%')
+;
+
+
+# рейтинг жалоб в каждом из районов города (на любые вещества)
+SELECT area, count(*) as count
+FROM air_complaints_rzn
+group by area
+order by count
+;
+
+
+# рейтинг жалоб в каждом из районов города на конкретное вещество (в примере на фенол)
+SELECT area, count(*) as count
+FROM air_complaints_rzn
+where 
+UPPER(comment) like UPPER('%фенол%') OR
+UPPER(comment) like UPPER('%сладковат%') OR
+UPPER(comment) like UPPER('%краск%') OR
+UPPER(comment) like UPPER('%гуаш%')
+group by area
+order by count
+;
+
